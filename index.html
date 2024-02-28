@@ -1,41 +1,49 @@
 <!DOCTYPE html>
 <html>
-    <head>
+    <head prefix="og: http://ogp.me/ns#">
+        <title>WasmLinux -- WebAssembly/browser native Linux kernel and userland</title>
         <link rel="stylesheet" href="https://unpkg.com/water.css@2.1.1/out/water.css" crossorigin />
         <link rel="stylesheet" href="https://unpkg.com/xterm@5.3.0/css/xterm.css"  crossorigin />
+        <meta property="og:title" content="WasmLinux Demo" />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content="World's first (maybe) WebAssembly native Linux system demo" />
+        <meta property="og:site_name" content="WasmLinux Demo" />
+        <meta property="og:image" content="https://wasmlinux-demo.pages.dev/assets/wasmlinux_sq.png" />
     </head>
     <body>
+        <img src="assets/wasmlinux.png" alt="WasmLinux title" />
+        <p>WasmLinux Terminal:</p>
         <div id="terminal"></div>
-        <p>(Please wait for <code>/ #</code> prompt. If it doesn't appear, focus the terminal and hit Enter. See below for why...)</code></p>
+        <p>(Please wait for <code>/ #</code> prompt. If it doesn't appear, focus the terminal and hit Enter. See below for why...)</p>
         <h1>WasmLinux</h1>
-        <p><a href="https://github.com/okuoku/wasmlinux-build">GitHub</a> / <a href="https://twitter.com/okuoku">Twitter(formerly X)</a></p>
+        <p><a href="https://github.com/okuoku/wasmlinux-project">GitHub</a> / <a href="https://twitter.com/okuoku">X (formerly Twitter)</a></p>
         <hr />
-        <p>Here is WasmLinux, WebAssembly &quot;native&quot; Linux system.</p>
-        <p>Unlike existing Linux-on-Wasm solutions like <a href="https://leaningtech.com/webvm/">WebVM</a>(x86) or <a href="https://github.com/ktock/container2wasm">container2wasm</a>(RISC-V, x86), WasmLinux does not use emulation of any existing CPU architecture, both userland and kernel.</p>
+        <p>Here is WasmLinux, prototype of WebAssembly &quot;native&quot; Linux system.</p>
+        <p>Unlike existing Linux-on-Wasm solutions like <a href="https://leaningtech.com/webvm/">WebVM</a>(x86) or <a href="https://github.com/ktock/container2wasm">container2wasm</a>(RISC-V, x86), WasmLinux does not use emulator of any existing CPU architecture, both userland and kernel.</p>
         <p>This is composed with <a href="https://github.com/okuoku/lkl-wasm">patched NOMMU Linux(LKL)</a> + <a href="https://github.com/okuoku/wasmlinux-musl">lightly patched Linux MUSL libc</a> + <a href="https://github.com/okuoku/wasmlinux-busybox">lightly patched Busybox</a>, compiled to Wasm (and processed with Wasm2c and compiled again with Emscripten, just for setjmp/longjmp)</p>
         <p>We are working on native setjmp/longjmp implementation, just like <a href="https://github.com/WebAssembly/wasi-libc/pull/467">WASI libc #467</a> so we can drop wasm2c usage in future.</p>
         <h2>Try it!</h2>
         <p>Click the terminal above, then say <code>ls</code>, <b>then hit Enter <u>twice</u></b></p>
-        <p>Currently the only app provided is BusyBox. You can do other things such as <code>vi</code>, <code>dmesg</code> or <code>ifconfig lo up</code> then <code>ping 127.0.0.1</code></p>
+        <p>Currently the only app provided is BusyBox. You can do other things such as <code>vi</code>, <code>dmesg</code>, <code>ifconfig lo up</code> then <code>ping 127.0.0.1</code> or even <code>top</code>. To get list of available commands, say <code>busybox</code> .</p>
         <h2>Why do we need to hit Enter twice? (Limitations)</h2>
         <p>WasmLinux has several unimplemented features. Namely;
         <ul>
             <li>Asynchronous signal delivery. So we need to interrupt <code>read</code>(2) by-hand. This is why an additional Enter required for each commands.</li>
-            <li>It's still a NOEMMU(uClinux) kernel; no <code>mmap</code>(2) so we don't have <code>fork</code>(2) either. </li>
+            <li>It's still a NOMMU(uClinux) kernel; no <code>mmap</code>(2) so we don't have <code>fork</code>(2) either. </li>
         </ul></p>
-        <p>Actually, WasmLinux kernel is just a Wasm executable that contains <a href="https://github.com/lkl/linux">LKL (Linux kernel library)</a> so there is no real "kernel-mode" code. We will eventually implement <code>mmap</code> or POSIX signal emulations on it but I don't think WasmLinux will become actual linux arch.</p>
+        <p>Actually, WasmLinux kernel is just a Wasm executable that contains <a href="https://github.com/lkl/linux">LKL (Linux kernel library -- Linux kernel as userland library)</a> so there is no real "kernel-mode" code. We will eventually implement <code>mmap</code> or POSIX signal emulations on it but I don't think WasmLinux will become actual linux arch.</p>
         <h2>It stopped working suddenly! (Known issues)</h2>
         <p>To recover from hang, just reload this page. It does not have any persistent data.</p>
         <p>Many things are broken since we don't have proper POSIX signal implementation yet. Incomplete list of bugs;
         <ul>
-            <li> Piping. Don't <code>dmesg | less</code>, <code>dmesg &gt; out</code> then <code>less out</code> instead</li>
-            <li> Sequencing. We cannot do <code>ls; ls</code> yet.</li>
+            <li>Piping(<a href="https://github.com/okuoku/wasmlinux-project/issues/4">#4</a>). Don't <code>dmesg | less</code>, instead, say <code>dmesg &gt; out</code> then <code>less out</code></li>
+            <li>Sequencing(<a href="https://github.com/okuoku/wasmlinux-project/issues/3">#3</a>). We cannot do <code>ls; ls</code> yet.</li>
             <li>...</li>
         </ul></p>
         <h2>Seems nice, where is the SDK? (Roadmap)</h2>
         <p>Comming soon(TM). Current near-term roadmap is;
         <ol>
-            <li>Add support to run on native browser Wasm implementation(+ Wasm Exceptions) so we can drop wasm2c overhead.</li>
+            <li>Add support to run on native browser Wasm implementation(+ Wasm Exceptions) so we can drop wasm2c overhead on browser environment.</li>
             <li>Implement asynchronous signal delivery. (won't be able to interrupt usermode though.)</li>
             <li>Implement WebRTC based inter-browser and local system(using <a href="https://github.com/paullouisageneau/libdatachannel">libdatachannel</a>) VPN</li>
             <li>Implement <a href="https://github.com/okuoku/cwgl">C-WebGL</a> and EGL/OpenGL ES bridge layer. More Web API C bindings to access local devices.</li>
@@ -44,13 +52,23 @@
             <li>Define <code>wasm32-linux</code> ABI and provide SDK so users can add apps</li>
         </ol> and we aim to support full microcontroller(ARM etc) toolchain + CMake + LLDB on the web. Self hosting would be nice to have but I think it would hard to be practical since current WasmLinux is in 32bit.</p>
         <p>Long-term goal is to support <code>mmap</code>(2) with address translation (like <a href="https://github.com/copy/v86/blob/360d5691ff2ef0ca1c1a16d683910338b7325f07/docs/how-it-works.md">v86</a>) but I'm not really sure when it is ready.</p>
+        <p>PC(native) builds with <code>wasm2c</code> will remain as Tier1 platform of WasmLinux. PC builds will be the only way to implement &quot;hardmmu&quot; memory management.</p>
+        <h2>Where can I find the sources? (Build)</h2>
+        <p>Currently, it is just a PoC state thus sources are just complete mess; do not waste your time on it...</p>
+        <p>For reference, build flow overview:</p>
+        <img src="assets/sources.png" alt="Source/Build flow overview">
+        <p>Every source code reference is submoduled on <a href="https://github.com/okuoku/wasmlinux-project">GitHub wasmlinux-project</a> repository.</p>
+        <p>Tentative syscall protocol is baked in Musl patches and <a href="https://github.com/okuoku/wasmlinux-runner/blob/908d4a535035913fcdea05610027160a09206ca4/hostrunner/runner.cpp#L771">implemented in runner source</a>. It is just a Wasm export and will get final names elsewhere. User code should not call the export directly and encouraged to use libc.</p>
+        <p>On user's syscall, runner will <a href="https://github.com/okuoku/wasmlinux-runner/blob/908d4a535035913fcdea05610027160a09206ca4/hostrunner/runner.cpp#L706">call kernel through its wasm export</a> that is <a href="https://github.com/okuoku/lkl-wasm/blob/3520da9491b96bb54c73b79b0a95f575f149d565/_hostwasm/hostwasm_main.c#L137">exported from the kernel</a>. Currently, wasm2c is the only Wasm engine that the runner support. Runner has knowledge of <a href="https://github.com/okuoku/wasmlinux-runner/blob/908d4a535035913fcdea05610027160a09206ca4/hostrunner/kernel_data/syscall_argc.h">syscall argument counts</a> and will adjust syscall argument when required -- calling C function with correct argument count is strict requirement of Wasm.</p>
+        <p>The runner has &quot;pseudo inetd&quot; feature that <a href="https://github.com/okuoku/wasmlinux-runner/blob/908d4a535035913fcdea05610027160a09206ca4/hostrunner/runner.cpp#L1572">invokes a process</a> on incomming connection and relay <a href="https://github.com/okuoku/wasmlinux-runner/blob/908d4a535035913fcdea05610027160a09206ca4/hostrunner/runner.cpp#L1620">socket pair I/O</a> to the host system. Host I/O backend is abstructed to <a href="https://github.com/okuoku/miniio">miniio</a> library and on PC build, it will use libuv. On browser build, it has dedicated <a href="https://github.com/okuoku/miniio/blob/3cff42b1c9610562e813a09e935a5701215a79c9/src/miniio_localnetstub.c">localhost-only stub</a> which is implemented on host pthread.</p>
+        <p>To communicate with WasmLinux system, BusyBox <code>telnetd</code> will be used. On PC build, conventional telnet client (e.g. PuTTY) will work. On browser build, our own <a href="https://github.com/okuoku/minitelnet">minitelnet</a> telnet client which is implemented on miniio will be used. Minitelnet assumes host environment supports Linux-like PTY and it is implemented using xterm-pty on this page.</p>
         <h2>Why? (Motivations)</h2>
-        <p>Write once(by other folks), run anywhere(i want). I know we already have WASI or <a here="https://github.com/arjunr2/WALI">WALI</a>, but unfortunately they need to be ported to some serious OS to work with. Since WasmLinux covers Linux kernel as well, required porting effort is quite little; it even have filesystems or device drivers. Even if you designed your own ISA just runs Wasm, WasmLinux (theoretically) easily ported on it and no need to port other apps that runs on WasmLinux.</p>
+        <p>Write once(by other folks), run anywhere(i want). I know we already have WASI or <a href="https://github.com/arjunr2/WALI">WALI</a>, but unfortunately they need to be ported to some serious OS to work with. Since WasmLinux covers Linux kernel as well, required porting effort is quite little; it even have filesystems or device drivers. Even if you designed your own ISA just runs Wasm, WasmLinux (theoretically) easily ported on it and no need to port other apps that runs on WasmLinux.</p>
         <p>... anyway, I think WALI still require apps to be ported to its environment because it doesn't provide enough platform abstraction to make porting effortless (e.g. page size is 64k, no setjmp/longjmp, ...). WasmLinux choose to develop native Linux Kernel that can be implemented on browser Wasm environments to ensure its ABI is enough portable.</p>
-        <p>Currently we can support BusyBox for almost zero porting effort, because it already supports NOEMMU environment. We'd like to extend these to non-NOMMU apps by adding memory protection etc in future. Unfortunately many Linux apps assumes Linux environment is ELF, have <i>computed <code>goto</code>s</i>, have <code>__builtin_return_address</code>, assume implicit function pointer cast, etc. We believe WasmLinux solves some sort-of chicken/egg problem; some of these are good candidate for Wasm extension and existence of real apps would be helpful.</p>
-        <p>For now, entire WasmLinux system is just a usermode C++20 application; LKL and MUSL+BusyBox are ported on bare-bone Wasm environment then translated with <code>wasm2c</code> and linked with a thin runtime stub. We have intentionally avoided Emscripten for first porting to ensure ported WasmLinux kernel and apps can run on (mostly) standard WebAssembly engines. <code>setjmp</code>, <code>longjmp</code> and <code>vfork</code> are last remaining parts that require special Wasm engine capability but i think they can be implemented with Wasm exception proposal so we would be able to make entire system Emscripten-free eventually.</p>
+        <p>Currently we can support BusyBox for almost zero porting effort, because it already supports NOMMU environment. We'd like to extend these to non-NOMMU apps by adding memory protection etc in future. Unfortunately many Linux apps assumes Linux environment is ELF, have <i>computed <code>goto</code>s</i>, have <code>__builtin_return_address</code>, assume implicit function pointer cast, etc. We believe WasmLinux solves some sort-of chicken/egg problem; some of these are good candidate for Wasm extension and existence of real apps would be helpful.</p>
+        <p>For now, entire WasmLinux system is just a usermode C++20 application; LKL and MUSL+BusyBox are ported on bare-bone Wasm environment then translated with <code>wasm2c</code> and linked with a thin runtime stub. We have intentionally avoided Emscripten for first porting to ensure ported WasmLinux kernel and apps can run on (mostly) standard WebAssembly engines, and <code>wasm2c</code> can turn it to plain C application. <code>setjmp</code>, <code>longjmp</code> and <code>vfork</code> are last remaining parts that require special Wasm engine capability but i think they can be implemented with Wasm exception proposal so we would be able to make entire system Emscripten-free eventually.</p>
         <h1>Credits</h1>
-        <p>Terminal is implemented with <a href="https://github.com/mame/xterm-pty">xterm-pty</a>. CSS is <a href="https://watercss.kognise.dev/">Water.css</a>. Libraries are served by <a href="https://unpkg.com/">unpkg</a>.</p>
+        <p>Terminal is implemented with <a href="https://github.com/mame/xterm-pty">xterm-pty</a>. CSS is <a href="https://watercss.kognise.dev/">Water.css</a>. Web page libraries are served by <a href="https://unpkg.com/">unpkg</a>. Embedded telnet client is based on <a href="https://github.com/seanmiddleditch/libtelnet/">libtelnet</a>.</p>
         <script type="module">
             import 'https://unpkg.com/xterm@5.3.0/lib/xterm.js';
       import 'https://unpkg.com/xterm-pty/index.js';
